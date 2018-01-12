@@ -11,14 +11,15 @@
     "url": "https://github.com/felpin/user-onboarding-challenge.git"
   },
   "dependencies": {
-    "express": "4.16.2"
+    "body-parser": "1.18.2",
+    "cors": "2.8.4",
+    "dotenv": "4.0.0",
+    "express": "4.16.2",
+    "mongoose": "4.13.9"
   },
   "devDependencies": {
     "eslint": "4.15.0",
-    "eslint-config-standard": "^11.0.0-beta.0",
-    "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-node": "^5.2.1",
-    "eslint-plugin-promise": "^3.6.0",
-    "eslint-plugin-standard": "^3.0.1"
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0"
   }
 }
