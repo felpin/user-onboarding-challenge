@@ -10,7 +10,9 @@
     "type": "git",
     "url": "https://github.com/felpin/user-onboarding-challenge.git"
   },
-  "dependencies": {},
+  "dependencies": {
+    "express": "4.16.2"
+  },
   "devDependencies": {
     "eslint": "4.15.0",
     "eslint-config-standard": "^11.0.0-beta.0",
