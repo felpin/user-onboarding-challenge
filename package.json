@@ -1,0 +1,15 @@
+{
+  "name": "user-onboarding-challenge",
+  "version": "0.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Felipe de Alencar Pinheiro",
+    "email": "felipe.pinheiro.90@hotmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/felpin/user-onboarding-challenge.git"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
