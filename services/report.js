@@ -2,16 +2,31 @@ const { ObjectId } = require('mongoose').Types;
 const Activity = require('../models/activity');
 const Step = require('../models/step');
 
-const sortFlowsByCancelCountAggregationPipeline = createFlowSortByStatusCountAggregationPipeline('cancel');
-const sortFlowsByEndCountAggregationpipeline = createFlowSortByStatusCountAggregationPipeline('end');
-const sortFlowsByStartCountAggregationPipeline = createFlowSortByStatusCountAggregationPipeline('start');
-const sortStepsByCancelCountAggregationPipeline = flowId => createStepSortByStatusCountAggregationPipeline(flowId, 'cancel');
-const sortStepsByEndCountAggregationPipeline = flowId => createStepSortByStatusCountAggregationPipeline(flowId, 'end');
-const sortStepsByStartCountAggregationPipeline = flowId => createStepSortByStatusCountAggregationPipeline(flowId, 'start');
+const sortFlowsByCancelCountAggregationPipeline = filter => createFlowSortByStatusCountAggregationPipeline('cancel', filter);
+const sortFlowsByEndCountAggregationpipeline = filter => createFlowSortByStatusCountAggregationPipeline('end', filter);
+const sortFlowsByStartCountAggregationPipeline = filter => createFlowSortByStatusCountAggregationPipeline('start', filter);
 
-function createFlowSortByStatusCountAggregationPipeline(status) {
+const sortStepsByCancelCountAggregationPipeline = (flowId, filter) => createStepSortByStatusCountAggregationPipeline(flowId, 'cancel', filter);
+const sortStepsByEndCountAggregationPipeline = (flowId, filter) => createStepSortByStatusCountAggregationPipeline(flowId, 'end', filter);
+const sortStepsByStartCountAggregationPipeline = (flowId, filter) => createStepSortByStatusCountAggregationPipeline(flowId, 'start', filter);
+
+function createFlowSortByStatusCountAggregationPipeline(status, filter) {
+  const aggregationMatch = { type: 'flow', status };
+
+  if (filter) {
+    aggregationMatch.occured = {};
+
+    if (filter.since) {
+      aggregationMatch.occured.$gte = filter.since;
+    }
+
+    if (filter.until) {
+      aggregationMatch.occured.$lt = filter.until;
+    }
+  }
+
   return [
-    { $match: { type: 'flow', status } },
+    { $match: aggregationMatch },
     { $sortByCount: '$flow' },
     {
       $lookup: {
@@ -26,7 +41,17 @@ function createFlowSortByStatusCountAggregationPipeline(status) {
   ];
 }
 
-function createStepSortByStatusCountAggregationPipeline(flowId, status) {
+function createStepSortByStatusCountAggregationPipeline(flowId, status, filter) {
+  const andCondition = [{ $eq: ['$$activity.status', status] }];
+
+  if (filter && filter.since) {
+    andCondition.push({ $gte: ['$$activity.occured', filter.since] });
+  }
+
+  if (filter && filter.until) {
+    andCondition.push({ $lt: ['$$activity.occured', filter.until] });
+  }
+
   return [
     { $match: { flow: ObjectId(flowId) } },
     {
@@ -45,7 +70,7 @@ function createStepSortByStatusCountAggregationPipeline(flowId, status) {
           $filter: {
             input: '$activities',
             as: 'activity',
-            cond: { $eq: ['$$activity.status', status] },
+            cond: { $and: andCondition },
           },
         },
       },
@@ -57,90 +82,121 @@ function createStepSortByStatusCountAggregationPipeline(flowId, status) {
 
 /**
  * Sort flows by the number of activities that cancel it.
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortFlowsByCancelCount() {
-  return Activity.aggregate(sortFlowsByCancelCountAggregationPipeline);
+function sortFlowsByCancelCount(filter) {
+  return Activity.aggregate(sortFlowsByCancelCountAggregationPipeline(filter));
 }
 
 /**
  * Sort flows by the number of activities that cancel it.
  * But, for every canceled activity, there must be another to start it.
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortFlowsByCancelCountAlternative() {
-  const aggregationByCancel = Activity.aggregate(sortFlowsByCancelCountAggregationPipeline);
-  return useMinimiumCountSortingFlows(aggregationByCancel);
+function sortFlowsByCancelCountAlternative(filter) {
+  const aggregationByCancel = Activity.aggregate(sortFlowsByCancelCountAggregationPipeline(filter));
+  return useMinimiumCountSortingFlows(aggregationByCancel, filter);
 }
 
 /**
  * Sort flows by the number of activities that end it.
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortFlowsByEndCount() {
-  return Activity.aggregate(sortFlowsByEndCountAggregationpipeline);
+function sortFlowsByEndCount(filter) {
+  return Activity.aggregate(sortFlowsByEndCountAggregationpipeline(filter));
 }
 
 /**
  * Sort flows by the number of activities that end it.
  * But, for every ended activity, there must be another to start it.
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortFlowsByEndCountAlternative() {
-  const aggregationByEnd = Activity.aggregate(sortFlowsByEndCountAggregationpipeline);
-  return useMinimiumCountSortingFlows(aggregationByEnd);
+function sortFlowsByEndCountAlternative(filter) {
+  const aggregationByEnd = Activity.aggregate(sortFlowsByEndCountAggregationpipeline(filter));
+  return useMinimiumCountSortingFlows(aggregationByEnd, filter);
 }
 
 /**
  * Sort flows by the number of activities that start it.
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortFlowsByStartCount() {
-  return Activity.aggregate(sortFlowsByStartCountAggregationPipeline);
+function sortFlowsByStartCount(filter) {
+  return Activity.aggregate(sortFlowsByStartCountAggregationPipeline(filter));
 }
 
 /**
  * Sort steps in a flow by the number of activities that cancel it.
  * @param {string} flowId The id of the flow containing the steps
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortStepsByCancelCount(flowId) {
-  return Step.aggregate(sortStepsByCancelCountAggregationPipeline(flowId));
+function sortStepsByCancelCount(flowId, filter) {
+  return Step.aggregate(sortStepsByCancelCountAggregationPipeline(flowId, filter));
 }
 
 /**
  * Sort steps in a flow by the number of activities that cancel it.
  * But, for every canceled activity, there must be another to start it.
  * @param {string} flowId The id of the flow containing the steps
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortStepsByCancelCountAlternative(flowId) {
-  const aggregationCount = Step.aggregate(sortStepsByCancelCountAggregationPipeline(flowId));
-  return useMinimiumCountSortingSteps(flowId, aggregationCount);
+function sortStepsByCancelCountAlternative(flowId, filter) {
+  const aggregationCount =
+    Step.aggregate(sortStepsByCancelCountAggregationPipeline(flowId, filter));
+  return useMinimiumCountSortingSteps(flowId, aggregationCount, filter);
 }
 
 /**
  * Sort steps in a flow by the number of activities that end it.
  * @param {string} flowId The id of the flow containing the steps
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortStepsByEndCount(flowId) {
-  return Step.aggregate(sortStepsByEndCountAggregationPipeline(flowId));
+function sortStepsByEndCount(flowId, filter) {
+  return Step.aggregate(sortStepsByEndCountAggregationPipeline(flowId, filter));
 }
 
 /**
  * Sort steps in a flow by the number of activities that end it.
  * But, for every ended activity, there must be another to start it.
  * @param {string} flowId The id of the flow containing the steps
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortStepsByEndCountAlternative(flowId) {
-  const aggregationCount = Step.aggregate(sortStepsByEndCountAggregationPipeline(flowId));
-  return useMinimiumCountSortingSteps(flowId, aggregationCount);
+function sortStepsByEndCountAlternative(flowId, filter) {
+  const aggregationCount = Step.aggregate(sortStepsByEndCountAggregationPipeline(flowId, filter));
+  return useMinimiumCountSortingSteps(flowId, aggregationCount, filter);
 }
 
 /**
  * Sort steps in a flow by the number of activities that start it.
  * @param {string} flowId The id of the flow containing the steps
+ * @param {Object} filter The filter, if has any
+ * @param {Date} [filter.since] A date to filter as start date
+ * @param {Date} [filter.until] A date to filter as end date
  */
-function sortStepsByStartCount(flowId) {
-  return Step.aggregate(sortStepsByStartCountAggregationPipeline(flowId));
+function sortStepsByStartCount(flowId, filter) {
+  return Step.aggregate(sortStepsByStartCountAggregationPipeline(flowId, filter));
 }
 
-function useMinimiumCountSortingFlows(aggregationPromise) {
+function useMinimiumCountSortingFlows(aggregationPromise, filter) {
   const flowsSortedByStartCountPromise =
-    Activity.aggregate(sortFlowsByStartCountAggregationPipeline);
+    Activity.aggregate(sortFlowsByStartCountAggregationPipeline(filter));
 
   return Promise
     .all([flowsSortedByStartCountPromise, aggregationPromise])
@@ -154,8 +210,13 @@ function useMinimiumCountSortingFlows(aggregationPromise) {
           const { flow, count } = flowAggregation;
           const { id } = flow;
 
+          const countLocal = typeof count === 'number' ? count : 0;
+
+          let countStart = flowsSortedByStartCountMap.get(id.toString());
+          countStart = typeof countStart === 'number' ? countStart : 0;
+
           return {
-            count: Math.min(count, flowsSortedByStartCountMap.get(id.toString())),
+            count: Math.min(countLocal, countStart),
             flow,
           };
         })
@@ -163,9 +224,9 @@ function useMinimiumCountSortingFlows(aggregationPromise) {
     });
 }
 
-function useMinimiumCountSortingSteps(flowId, aggregationPromise) {
+function useMinimiumCountSortingSteps(flowId, aggregationPromise, filter) {
   const stepsSortedByStartCountPromise =
-    Step.aggregate(sortStepsByStartCountAggregationPipeline(flowId));
+    Step.aggregate(sortStepsByStartCountAggregationPipeline(flowId, filter));
 
   return Promise
     .all([stepsSortedByStartCountPromise, aggregationPromise])
@@ -179,8 +240,13 @@ function useMinimiumCountSortingSteps(flowId, aggregationPromise) {
           const { step, count } = stepAggregation;
           const { id } = step;
 
+          const countLocal = typeof count === 'number' ? count : 0;
+
+          let countStart = stepsSortedByStartCountMap.get(id.toString());
+          countStart = typeof countStart === 'number' ? countStart : 0;
+
           return {
-            count: Math.min(count, stepsSortedByStartCountMap.get(id.toString())),
+            count: Math.min(countLocal, countStart),
             step,
           };
         })
