@@ -10,6 +10,11 @@ const EntityNotFoundError = require('../errors/entityNotFound');
  * @param {function} getAll Get all entities
  */
 
+/**
+ * Creates a route with get all entities and get a single entity enpoints
+ * @param {Service} service The service to use
+ * @returns {Router} The express' router created
+ */
 function createRouter(service) {
   const router = createExpressRouter();
 
