@@ -11,7 +11,10 @@ const activitySchema = mongoose.Schema({
     type: String,
     enum: ['start', 'cancel', 'end'],
   },
-  occurred: Date,
+  occurred: {
+    type: Date,
+    default: Date.now,
+  },
   type: {
     type: String,
     enum: ['flow', 'step'],

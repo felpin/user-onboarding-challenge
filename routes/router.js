@@ -1,5 +1,6 @@
 const router = require('express').Router();
 
+router.use('/activities', require('./activity'));
 router.use('/flows', require('./flow'));
 router.use('/reports', require('./report'));
 router.use('/steps', require('./step'));
