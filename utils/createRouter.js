@@ -4,18 +4,20 @@ const idSchema = require('../schemas/id');
 const EntityNotFoundError = require('../errors/entityNotFound');
 
 /**
- * A service with get and getAll functions
+ * A service with create, get and getAll functions
  * @typedef {Object} Service
  * @param {function} get Get a single entity
  * @param {function} getAll Get all entities
+ * @param {function} create Create a new entity
  */
 
 /**
- * Creates a route with get all entities and get a single entity enpoints
+ * Creates a route with get all entities, get a single entity and create a entity enpoints
  * @param {Service} service The service to use
+ * @param {Schema} creationSchema A Joi schema to validate new entities
  * @returns {Router} The express' router created
  */
-function createRouter(service) {
+function createRouter(service, creationSchema) {
   const router = createExpressRouter();
 
   router.get('/', (req, res) => {
@@ -38,6 +40,22 @@ function createRouter(service) {
             } else {
               res.sendStatus(500);
             }
+          });
+      })
+      .catch(error => res.status(422).json(error));
+  });
+
+  router.post('/', (req, res) => {
+    Joi.validate(req.body, creationSchema)
+      .then((entity) => {
+        service
+          .create(entity)
+          .then((id) => {
+            res.location(id);
+            res.sendStatus(201);
+          })
+          .catch(() => {
+            res.sendStatus(500);
           });
       })
       .catch(error => res.status(422).json(error));

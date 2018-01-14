@@ -11,6 +11,14 @@ const EntityNotFoundError = require('../errors/entityNotFound');
  */
 
 /**
+* A new user
+* @typedef {Object} NewUser
+* @param {string} name The name of the user
+* @param {string} email The email of the user
+* @param {string} alias The alias of the user
+*/
+
+/**
  * A user database model
  * @typedef {Object} UserModel
  * @param {string} _id The id of the user
@@ -18,6 +26,34 @@ const EntityNotFoundError = require('../errors/entityNotFound');
  * @param {string} email The email of the user
  * @param {string} alias The alias of the user
  */
+
+/**
+* Creates a new user
+* @param {NewUser} user The user to be saved
+* @returns {string} The id of the new created user
+*/
+function create(user) {
+  const newUser = new User({
+    name: user.name,
+    email: user.email,
+    alias: user.alias,
+  });
+
+  return newUser
+    .save()
+    .then(({ _id }) => _id);
+}
+
+/**
+ * Check if a user with an id exists
+ * @param {string} id The id to check
+ * @returns {boolean} If the user exists
+ */
+function exists(id) {
+  return User
+    .findById(id)
+    .then(foundUser => !!foundUser);
+}
 
 /**
 * Get a user by id
@@ -70,6 +106,8 @@ function transform(userModel) {
 }
 
 module.exports = {
+  create,
+  exists,
   get,
   getAll,
 };
