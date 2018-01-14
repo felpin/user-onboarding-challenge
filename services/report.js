@@ -27,21 +27,21 @@ function getMostCanceledFlows() {
 }
 
 /**
- * Get the most used flows.
- * A flow to be used needs to start, so it is based on activities that start the flow
- */
-function getMostUsedFlows() {
-  const mostUsedFlowsAggregationPipeline = createFlowAggregationPipeline('start');
-  return Activity.aggregate(mostUsedFlowsAggregationPipeline);
-}
-
-/**
  * Get the most completed flows.
  * A flow to be completed needs to end, so it is based on activities that end the flow
  */
 function getMostCompletedFlows() {
   const mostCompletedFlowsAggregationPipeline = createFlowAggregationPipeline('end');
   return Activity.aggregate(mostCompletedFlowsAggregationPipeline);
+}
+
+/**
+ * Get the most used flows.
+ * A flow to be used needs to start, so it is based on activities that start the flow
+ */
+function getMostUsedFlows() {
+  const mostUsedFlowsAggregationPipeline = createFlowAggregationPipeline('start');
+  return Activity.aggregate(mostUsedFlowsAggregationPipeline);
 }
 
 module.exports = { getMostCanceledFlows, getMostCompletedFlows, getMostUsedFlows };
