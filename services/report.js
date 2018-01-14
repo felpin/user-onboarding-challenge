@@ -13,7 +13,7 @@ const sortStepsByStartCountAggregationPipeline = (flowId, filter) => createStepS
 function createFlowSortByStatusCountAggregationPipeline(status, filter) {
   const aggregationMatch = { type: 'flow', status };
 
-  if (filter) {
+  if (filter && (filter.since || filter.until)) {
     aggregationMatch.occured = {};
 
     if (filter.since) {

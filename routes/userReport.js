@@ -1,13 +1,17 @@
 const router = require('express').Router();
 const Joi = require('joi');
+const dateFilterSchema = require('../schemas/dateFilter');
 const idSchema = require('../schemas/id');
 const service = require('../services/userReport');
 
 function configureRouter(req, res, getUsersFunction) {
-  Joi
-    .validate(req.params.id, idSchema)
-    .then((id) => {
-      getUsersFunction(id)
+  const validateId = Joi.validate(req.params.id, idSchema);
+  const validateQuery = Joi.validate(req.query, dateFilterSchema);
+
+  Promise
+    .all([validateId, validateQuery])
+    .then(([id, query]) => {
+      getUsersFunction(id, query)
         .then((users) => {
           res.status(200).json(users);
         })

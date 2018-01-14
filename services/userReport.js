@@ -1,41 +1,55 @@
 const { ObjectId } = require('mongoose').Types;
 const Activity = require('../models/activity');
 
-function getUsersWhoStartedFlow(id) {
-  return getUsersWhoDidActivity('flow', 'start', id);
+function getUsersWhoStartedFlow(id, filter) {
+  return getUsersWhoDidActivity('flow', 'start', id, filter);
 }
 
-function getUsersWhoEndedFlow(id) {
-  return getUsersWhoDidActivity('flow', 'end', id);
+function getUsersWhoEndedFlow(id, filter) {
+  return getUsersWhoDidActivity('flow', 'end', id, filter);
 }
 
-function getUsersWhoCanceledFlow(id) {
-  return getUsersWhoDidActivity('flow', 'cancel', id);
+function getUsersWhoCanceledFlow(id, filter) {
+  return getUsersWhoDidActivity('flow', 'cancel', id, filter);
 }
 
-function getUsersWhoStartedStep(id) {
-  return getUsersWhoDidActivity('step', 'start', id);
+function getUsersWhoStartedStep(id, filter) {
+  return getUsersWhoDidActivity('step', 'start', id, filter);
 }
 
-function getUsersWhoEndedStep(id) {
-  return getUsersWhoDidActivity('step', 'end', id);
+function getUsersWhoEndedStep(id, filter) {
+  return getUsersWhoDidActivity('step', 'end', id, filter);
 }
 
-function getUsersWhoCanceledStep(id) {
-  return getUsersWhoDidActivity('step', 'cancel', id);
+function getUsersWhoCanceledStep(id, filter) {
+  return getUsersWhoDidActivity('step', 'cancel', id, filter);
 }
 
-function getUsersWhoDidActivity(type, status, id) {
+function getUsersWhoDidActivity(type, status, id, filter) {
   return Activity
-    .aggregate(getUsersWhoDidActivityAggregationPipeline(type, status, id))
+    .aggregate(getUsersWhoDidActivityAggregationPipeline(type, status, id, filter))
     .then(users => users.map(user => user.user));
 }
 
-function getUsersWhoDidActivityAggregationPipeline(type, status, id) {
+function getUsersWhoDidActivityAggregationPipeline(type, status, id, filter) {
+  const aggregationMatch = { type, status };
+
+  if (filter && (filter.since || filter.until)) {
+    aggregationMatch.occured = {};
+
+    if (filter.since) {
+      aggregationMatch.occured.$gte = filter.since;
+    }
+
+    if (filter.until) {
+      aggregationMatch.occured.$lt = filter.until;
+    }
+  }
+
   const matchObject = type === 'flow' ? { flow: ObjectId(id) } : { step: ObjectId(id) };
 
   return [
-    { $match: Object.assign({ type, status }, matchObject) },
+    { $match: Object.assign(aggregationMatch, matchObject) },
     { $group: { _id: '$user' } },
     {
       $lookup: {
