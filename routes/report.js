@@ -2,8 +2,9 @@ const router = require('express').Router();
 const service = require('../services/report');
 
 router.get('/most-canceled-flows', (req, res) => {
+  // It assumes that a flow to be canceled needs only an activity to cancel
   service
-    .getMostCanceledFlows()
+    .sortFlowsByCancelCount()
     .then((flows) => {
       res.status(200).json(flows);
     })
@@ -13,8 +14,9 @@ router.get('/most-canceled-flows', (req, res) => {
 });
 
 router.get('/most-completed-flows', (req, res) => {
+  // It assumes that a flow to be completed needs only an activity to end
   service
-    .getMostCompletedFlows()
+    .sortFlowsByEndCount()
     .then((flows) => {
       res.status(200).json(flows);
     })
@@ -24,8 +26,9 @@ router.get('/most-completed-flows', (req, res) => {
 });
 
 router.get('/most-used-flows', (req, res) => {
+  // It assumes that a flow to be used needs only an activity to start
   service
-    .getMostUsedFlows()
+    .sortFlowsByStartCount()
     .then((flows) => {
       res.status(200).json(flows);
     })

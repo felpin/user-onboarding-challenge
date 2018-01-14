@@ -1,6 +1,10 @@
 const Activity = require('../models/activity');
 
-function createFlowAggregationPipeline(status) {
+const sortFlowsByCancelCountAggregationPipeline = createFlowSortByStatusCountAggregationPipeline('cancel');
+const sortFlowsByEndCountAggregationpipeline = createFlowSortByStatusCountAggregationPipeline('end');
+const sortFlowsByStartCountAggregationPipeline = createFlowSortByStatusCountAggregationPipeline('start');
+
+function createFlowSortByStatusCountAggregationPipeline(status) {
   return [
     { $match: { type: 'flow', status } },
     { $sortByCount: '$flow' },
@@ -18,30 +22,24 @@ function createFlowAggregationPipeline(status) {
 }
 
 /**
- * Get the most canceled flows.
- * A flow to be canceled needs to cancel, so it is based on activities that cancel the flow
+ * Sort flows by the number of activities that cancel it.
  */
-function getMostCanceledFlows() {
-  const mostCanceledFlowsAggregationPipeline = createFlowAggregationPipeline('cancel');
-  return Activity.aggregate(mostCanceledFlowsAggregationPipeline);
+function sortFlowsByCancelCount() {
+  return Activity.aggregate(sortFlowsByCancelCountAggregationPipeline);
 }
 
 /**
- * Get the most completed flows.
- * A flow to be completed needs to end, so it is based on activities that end the flow
+ * Sort flows by the number of activities that end it.
  */
-function getMostCompletedFlows() {
-  const mostCompletedFlowsAggregationPipeline = createFlowAggregationPipeline('end');
-  return Activity.aggregate(mostCompletedFlowsAggregationPipeline);
+function sortFlowsByEndCount() {
+  return Activity.aggregate(sortFlowsByEndCountAggregationpipeline);
 }
 
 /**
- * Get the most used flows.
- * A flow to be used needs to start, so it is based on activities that start the flow
+ * Sort flows by the number of activities that start it.
  */
-function getMostUsedFlows() {
-  const mostUsedFlowsAggregationPipeline = createFlowAggregationPipeline('start');
-  return Activity.aggregate(mostUsedFlowsAggregationPipeline);
+function sortFlowsByStartCount() {
+  return Activity.aggregate(sortFlowsByStartCountAggregationPipeline);
 }
 
-module.exports = { getMostCanceledFlows, getMostCompletedFlows, getMostUsedFlows };
+module.exports = { sortFlowsByCancelCount, sortFlowsByEndCount, sortFlowsByStartCount };
