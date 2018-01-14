@@ -50,6 +50,7 @@ const lookupSteps = {
 /**
  * Creates a new flow
  * @param {NewFlow} flow The flow to be saved
+ * @returns {string} The id of the new created flow
  */
 function create(flow) {
   const newFlow = new Flow({
@@ -59,6 +60,17 @@ function create(flow) {
   return newFlow
     .save()
     .then(({ _id }) => _id);
+}
+
+/**
+ * Check if a flow with an id exists
+ * @param {string} id The id to check
+ * @returns {boolean} If the flow exists
+ */
+function exists(id) {
+  return Flow
+    .findById(id)
+    .then(foundFlow => !!foundFlow);
 }
 
 /**
@@ -106,6 +118,7 @@ function transform(flowModel) {
 
 module.exports = {
   create,
+  exists,
   get,
   getAll,
 };
