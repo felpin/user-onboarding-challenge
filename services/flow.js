@@ -1,11 +1,27 @@
+const { ObjectId } = require('mongoose').Types;
 const Flow = require('../models/flow');
 const EntityNotFoundError = require('../errors/entityNotFound');
+
+/**
+* A step of a flow
+* @typedef {Object} Step
+* @param {string} id The id of the step
+* @param {string} title The title of the step
+*/
+
+/**
+* A step database model
+* @typedef {Object} StepModel
+* @param {string} _id The id of the step
+* @param {string} title The title of the step
+*/
 
 /**
  * A flow
  * @typedef {Object} Flow
  * @param {string} id The id of the flow
  * @param {string} title The title of the flow
+ * @param {Step[]} steps The steps of this flow
  */
 
 /**
@@ -13,7 +29,17 @@ const EntityNotFoundError = require('../errors/entityNotFound');
 * @typedef {Object} FlowModel
 * @param {string} _id The id of the flow
 * @param {string} title The title of the flow
+* @param {StepModel[]} steps The steps of this model
 */
+
+const lookupSteps = {
+  $lookup: {
+    from: 'steps',
+    localField: '_id',
+    foreignField: 'flow',
+    as: 'steps',
+  },
+};
 
 /**
  * Get a flow by id
@@ -22,13 +48,14 @@ const EntityNotFoundError = require('../errors/entityNotFound');
  */
 function get(id) {
   return Flow
-    .findById(id)
-    .then((flow) => {
-      if (!flow) {
+    .aggregate([{ $match: { _id: ObjectId(id) } }, lookupSteps])
+    .then((flows) => {
+      if (!flows.length) {
         throw new EntityNotFoundError('flow', id);
       }
 
-      return renameId(flow);
+      const flow = flows[0];
+      return transform(flow);
     });
 }
 
@@ -38,19 +65,21 @@ function get(id) {
  */
 function getAll() {
   return Flow
-    .find()
-    .then(flows => flows.map(flow => renameId(flow)));
+    .aggregate([lookupSteps])
+    .then(flows => flows.map(flow => transform(flow)));
 }
 
 /**
- * Rename the property _id in flowModel to id
+ * Rename recursively the properties _id to id
  * @param {FlowModel} flowModel The object with _id property
  * @returns {Flow} The object with id property
  */
-function renameId(flowModel) {
-  const { _id: id, title } = flowModel;
+function transform(flowModel) {
+  const { _id: id, title, steps } = flowModel;
 
-  const flowCopy = { id, title };
+  const stepsCopy = steps.map(step => ({ id: step._id, title: step.title }));
+
+  const flowCopy = { id, title, steps: stepsCopy };
 
   return flowCopy;
 }
