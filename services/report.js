@@ -11,8 +11,8 @@ const mostUsedFlowsAggregationPipeline = [
       as: 'flows',
     },
   },
-  { $project: { _id: 0, flow: { $arrayElemAt: ['$flows', 0] }, timesUsed: '$count' } },
-  { $project: { flow: { id: '$flow._id', title: 1 }, timesUsed: 1 } },
+  { $project: { _id: 0, flow: { $arrayElemAt: ['$flows', 0] }, count: 1 } },
+  { $project: { flow: { id: '$flow._id', title: 1 }, count: 1 } },
 ];
 
 function getMostUsedFlows() {
