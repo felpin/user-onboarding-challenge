@@ -63,10 +63,28 @@ function sortFlowsByCancelCount() {
 }
 
 /**
+ * Sort flows by the number of activities that cancel it.
+ * But, for every canceled activity, there must be another to start it.
+ */
+function sortFlowsByCancelCountAlternative() {
+  const aggregationByCancel = Activity.aggregate(sortFlowsByCancelCountAggregationPipeline);
+  return useMinimiumCountSortingFlows(aggregationByCancel);
+}
+
+/**
  * Sort flows by the number of activities that end it.
  */
 function sortFlowsByEndCount() {
   return Activity.aggregate(sortFlowsByEndCountAggregationpipeline);
+}
+
+/**
+ * Sort flows by the number of activities that end it.
+ * But, for every ended activity, there must be another to start it.
+ */
+function sortFlowsByEndCountAlternative() {
+  const aggregationByEnd = Activity.aggregate(sortFlowsByEndCountAggregationpipeline);
+  return useMinimiumCountSortingFlows(aggregationByEnd);
 }
 
 /**
@@ -85,11 +103,31 @@ function sortStepsByCancelCount(flowId) {
 }
 
 /**
+ * Sort steps in a flow by the number of activities that cancel it.
+ * But, for every canceled activity, there must be another to start it.
+ * @param {string} flowId The id of the flow containing the steps
+ */
+function sortStepsByCancelCountAlternative(flowId) {
+  const aggregationCount = Step.aggregate(sortStepsByCancelCountAggregationPipeline(flowId));
+  return useMinimiumCountSortingSteps(flowId, aggregationCount);
+}
+
+/**
  * Sort steps in a flow by the number of activities that end it.
  * @param {string} flowId The id of the flow containing the steps
  */
 function sortStepsByEndCount(flowId) {
   return Step.aggregate(sortStepsByEndCountAggregationPipeline(flowId));
+}
+
+/**
+ * Sort steps in a flow by the number of activities that end it.
+ * But, for every ended activity, there must be another to start it.
+ * @param {string} flowId The id of the flow containing the steps
+ */
+function sortStepsByEndCountAlternative(flowId) {
+  const aggregationCount = Step.aggregate(sortStepsByEndCountAggregationPipeline(flowId));
+  return useMinimiumCountSortingSteps(flowId, aggregationCount);
 }
 
 /**
@@ -100,11 +138,65 @@ function sortStepsByStartCount(flowId) {
   return Step.aggregate(sortStepsByStartCountAggregationPipeline(flowId));
 }
 
+function useMinimiumCountSortingFlows(aggregationPromise) {
+  const flowsSortedByStartCountPromise =
+    Activity.aggregate(sortFlowsByStartCountAggregationPipeline);
+
+  return Promise
+    .all([flowsSortedByStartCountPromise, aggregationPromise])
+    .then(([flowsSortedByStartCount, aggregationCount]) => {
+      const flowsSortedByStartCountMap =
+        new Map(flowsSortedByStartCount.map(flowAggregation =>
+          ([flowAggregation.flow.id.toString(), flowAggregation.count])));
+
+      return aggregationCount
+        .map((flowAggregation) => {
+          const { flow, count } = flowAggregation;
+          const { id } = flow;
+
+          return {
+            count: Math.min(count, flowsSortedByStartCountMap.get(id.toString())),
+            flow,
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+    });
+}
+
+function useMinimiumCountSortingSteps(flowId, aggregationPromise) {
+  const stepsSortedByStartCountPromise =
+    Step.aggregate(sortStepsByStartCountAggregationPipeline(flowId));
+
+  return Promise
+    .all([stepsSortedByStartCountPromise, aggregationPromise])
+    .then(([stepsSortedByStartCount, aggregationCount]) => {
+      const stepsSortedByStartCountMap =
+        new Map(stepsSortedByStartCount.map(stepAggregation =>
+          ([stepAggregation.step.id.toString(), stepAggregation.count])));
+
+      return aggregationCount
+        .map((stepAggregation) => {
+          const { step, count } = stepAggregation;
+          const { id } = step;
+
+          return {
+            count: Math.min(count, stepsSortedByStartCountMap.get(id.toString())),
+            step,
+          };
+        })
+        .sort((a, b) => b.count - a.count);
+    });
+}
+
 module.exports = {
   sortFlowsByCancelCount,
+  sortFlowsByCancelCountAlternative,
   sortFlowsByEndCount,
+  sortFlowsByEndCountAlternative,
   sortFlowsByStartCount,
   sortStepsByCancelCount,
+  sortStepsByCancelCountAlternative,
   sortStepsByEndCount,
+  sortStepsByEndCountAlternative,
   sortStepsByStartCount,
 };
