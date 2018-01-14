@@ -5,6 +5,7 @@ const cors = require('cors');
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
+const router = require('./routes/router');
 
 const mongooseOptions = {
   keepAlive: true,
@@ -23,6 +24,7 @@ function whenDatabaseConnectionOpens() {
 
   app.use(bodyParser.json());
   app.use(cors());
+  app.use(router);
 
   const PORT = process.env.PORT || 3000;
 
