@@ -4,7 +4,7 @@ const createRouter = require('../utils/createRouter');
 
 const creationSchema = Joi.object({
   name: Joi.string().required(),
-  email: Joi.string().required(),
+  email: Joi.string().email().required(),
   alias: Joi.string().required(),
 });
 
