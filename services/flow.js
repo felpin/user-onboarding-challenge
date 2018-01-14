@@ -1,4 +1,5 @@
 const Flow = require('../models/flow');
+const EntityNotFoundError = require('../errors/entityNotFound');
 
 /**
  * A flow
@@ -13,6 +14,23 @@ const Flow = require('../models/flow');
 * @param {string} _id The id of the flow
 * @param {string} title The title of the flow
 */
+
+/**
+ * Get a flow by id
+ * @param {string} id The id of the flow
+ * @returns {Promise<Flow>} The flow object
+ */
+function get(id) {
+  return Flow
+    .findById(id)
+    .then((flow) => {
+      if (!flow) {
+        throw new EntityNotFoundError('flow', id);
+      }
+
+      return renameId(flow);
+    });
+}
 
 /**
  * Get all the flows
@@ -38,5 +56,6 @@ function renameId(flowModel) {
 }
 
 module.exports = {
+  get,
   getAll,
 };
