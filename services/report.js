@@ -18,6 +18,15 @@ function createFlowAggregationPipeline(status) {
 }
 
 /**
+ * Get the most canceled flows.
+ * A flow to be canceled needs to cancel, so it is based on activities that cancel the flow
+ */
+function getMostCanceledFlows() {
+  const mostCanceledFlowsAggregationPipeline = createFlowAggregationPipeline('cancel');
+  return Activity.aggregate(mostCanceledFlowsAggregationPipeline);
+}
+
+/**
  * Get the most used flows.
  * A flow to be used needs to start, so it is based on activities that start the flow
  */
@@ -35,4 +44,4 @@ function getMostCompletedFlows() {
   return Activity.aggregate(mostCompletedFlowsAggregationPipeline);
 }
 
-module.exports = { getMostCompletedFlows, getMostUsedFlows };
+module.exports = { getMostCanceledFlows, getMostCompletedFlows, getMostUsedFlows };

@@ -1,6 +1,17 @@
 const router = require('express').Router();
 const service = require('../services/report');
 
+router.get('/most-canceled-flows', (req, res) => {
+  service
+    .getMostCanceledFlows()
+    .then((flows) => {
+      res.status(200).json(flows);
+    })
+    .catch(() => {
+      res.sendStatus(500);
+    });
+});
+
 router.get('/most-completed-flows', (req, res) => {
   service
     .getMostCompletedFlows()
