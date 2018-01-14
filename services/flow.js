@@ -25,6 +25,12 @@ const EntityNotFoundError = require('../errors/entityNotFound');
  */
 
 /**
+* A flow to be saved
+* @typedef {Object} NewFlow
+* @param {string} title The title of the flow
+*/
+
+/**
 * A flow database model
 * @typedef {Object} FlowModel
 * @param {string} _id The id of the flow
@@ -40,6 +46,20 @@ const lookupSteps = {
     as: 'steps',
   },
 };
+
+/**
+ * Creates a new flow
+ * @param {NewFlow} flow The flow to be saved
+ */
+function create(flow) {
+  const newFlow = new Flow({
+    title: flow.title,
+  });
+
+  return newFlow
+    .save()
+    .then(({ _id }) => _id);
+}
 
 /**
  * Get a flow by id
@@ -85,6 +105,7 @@ function transform(flowModel) {
 }
 
 module.exports = {
+  create,
   get,
   getAll,
 };
