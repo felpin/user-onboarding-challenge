@@ -1,0 +1,26 @@
+{
+  "name": "user-onboarding-challenge",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": {
+    "name": "Felipe de Alencar Pinheiro",
+    "email": "felipe.pinheiro.90@hotmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/felpin/user-onboarding-challenge.git"
+  },
+  "dependencies": {
+    "body-parser": "1.18.2",
+    "cors": "2.8.4",
+    "dotenv": "4.0.0",
+    "express": "4.16.2",
+    "joi": "13.1.0",
+    "mongoose": "4.13.9"
+  },
+  "devDependencies": {
+    "eslint": "4.15.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0"
+  }
+}
